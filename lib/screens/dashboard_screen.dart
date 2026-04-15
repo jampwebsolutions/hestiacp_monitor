@@ -20,8 +20,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  String uptime = "Άγνωστο";
-  String loadAverage = "Άγνωστο";
+  String uptime = "Unknown";
+  String loadAverage = "Unknown";
   Map<String, dynamic> servicesList = {};
   Map<String, dynamic> webDomainsList = {};
   Map<String, dynamic> mailDomainsList = {};
@@ -109,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     } catch (e) {
-      print("Σφάλμα Στατιστικών: $e");
+      print("Stats fault: $e");
     }
   }
 
