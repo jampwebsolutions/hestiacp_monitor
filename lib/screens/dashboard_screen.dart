@@ -36,9 +36,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _getAuthToken() {
     String secretKey = widget.server.bridgeSecret;
-    int timeWindow = (DateTime.now().millisecondsSinceEpoch / 1000 / 30)
+    // Χρησιμοποιούμε DateTime.now().toUtc() για να αποφύγουμε θέματα Timezone
+    int timeWindow = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000 / 30)
         .floor();
-    var bytes = utf8.encode("$secretKey$timeWindow");
+
+    // Ενώνουμε το κλειδί με το χρόνο
+    String rawString = "$secretKey$timeWindow";
+    var bytes = utf8.encode(rawString);
     return sha256.convert(bytes).toString();
   }
 
@@ -91,6 +95,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http.post(
         Uri.parse(widget.server.url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
+        },
         body: {
           'app_token': _getAuthToken(),
           'user': widget.server.username,
@@ -107,6 +114,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['sysinfo']['LOADAVERAGE'].toString(),
           );
         });
+        print(
+          "MOBILE HEX: ${hex.encode(utf8.encode(widget.server.bridgeSecret))}",
+        );
       }
     } catch (e) {
       print("Stats fault: $e");
@@ -118,6 +128,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http.post(
         Uri.parse(widget.server.url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
+        },
         body: {
           'app_token': _getAuthToken(),
           'user': widget.server.username,
@@ -141,6 +154,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http.post(
         Uri.parse(widget.server.url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
+        },
         body: {
           'app_token': _getAuthToken(),
           'user': widget.server.username,
@@ -167,6 +183,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http.post(
         Uri.parse(widget.server.url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
+        },
         body: {
           'app_token': _getAuthToken(),
           'user': widget.server.username,
@@ -195,6 +214,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http.post(
         Uri.parse(widget.server.url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
+        },
         body: {
           'app_token': _getAuthToken(),
           'user': widget.server.username,
