@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
+import 'dart:convert'; // Για utf8 και json
+import 'package:crypto/crypto.dart'; // Για sha256
+import 'package:convert/convert.dart'; // ΑΥΤΟ ΛΕΙΠΕΙ για το hex.encode
 
 import '../models/server_model.dart';
 import 'tabs/stats_tab.dart';
@@ -36,13 +37,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _getAuthToken() {
     String secretKey = widget.server.bridgeSecret;
-    // Χρησιμοποιούμε DateTime.now().toUtc() για να αποφύγουμε θέματα Timezone
+    // Χρήση UTC για να μην έχουμε θέματα με το timezone του κινητού
     int timeWindow = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000 / 30)
         .floor();
-
-    // Ενώνουμε το κλειδί με το χρόνο
-    String rawString = "$secretKey$timeWindow";
-    var bytes = utf8.encode(rawString);
+    var bytes = utf8.encode("$secretKey$timeWindow");
     return sha256.convert(bytes).toString();
   }
 
@@ -96,16 +94,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final response = await http.post(
         Uri.parse(widget.server.url),
         headers: {
-          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
+          'Content-Type':
+              'application/json; charset=UTF-8', // Πρέπει να είναι JSON
         },
-        body: {
+        body: json.encode({
+          // Χρησιμοποιούμε json.encode
           'app_token': _getAuthToken(),
-          'user': widget.server.username,
-          'password': widget.server.password,
           'cmd': 'v-list-sys-info',
           'arg1': 'json',
-        },
+        }),
       );
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -114,9 +113,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['sysinfo']['LOADAVERAGE'].toString(),
           );
         });
+
+        // Τώρα το print θα δουλέψει σωστά
         print(
           "MOBILE HEX: ${hex.encode(utf8.encode(widget.server.bridgeSecret))}",
         );
+      } else {
+        print("Server Error: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       print("Stats fault: $e");
