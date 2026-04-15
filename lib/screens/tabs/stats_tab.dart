@@ -42,12 +42,12 @@ class StatsTab extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
       child: ListTile(
         leading: Icon(icon, color: Colors.blueAccent, size: 30),
-        // Ο Τίτλος (π.χ. Uptime) στην πάνω σειρά
+        // The Title (e.g. Uptime) on the top row
         title: Text(
           title,
           style: const TextStyle(fontSize: 14, color: Colors.grey),
         ),
-        // Η Τιμή (π.χ. 14 μέρες...) στην κάτω σειρά
+        // The Value (e.g. 14 days...) on the bottom row
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 5),
           child: Text(

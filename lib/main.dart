@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'screens/server_list_screen.dart';
 
-// Παράκαμψη SSL
+// SSL Bypass
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -37,14 +37,13 @@ class _HestiaMonitorAppState extends State<HestiaMonitorApp> {
 
   Future<void> _authenticate() async {
     try {
-      // Ελέγχουμε αν η συσκευή υποστηρίζει κλείδωμα
+      // Check if device supports locking
       bool isSupported = await auth.isDeviceSupported();
 
       if (isSupported) {
-        // Η ΑΠΟΛΥΤΑ ΑΣΦΑΛΗΣ ΜΕΘΟΔΟΣ ΓΙΑ ΟΛΕΣ ΤΙΣ ΕΚΔΟΣΕΙΣ
+        // THE ABSOLUTELY SECURE METHOD FOR ALL VERSIONS
         bool didAuthenticate = await auth.authenticate(
-          localizedReason:
-              'Παρακαλώ ταυτοποιηθείτε (Αποτύπωμα ή Κωδικός/Μοτίβο)',
+          localizedReason: 'Please authenticate (Fingerprint or PIN/Pattern)',
         );
 
         setState(() {
@@ -54,7 +53,7 @@ class _HestiaMonitorAppState extends State<HestiaMonitorApp> {
         setState(() => _isAuthenticated = true);
       }
     } catch (e) {
-      print("Σφάλμα ταυτοποίησης: $e");
+      print("Authentication error: $e");
     }
   }
 
@@ -77,14 +76,14 @@ class _HestiaMonitorAppState extends State<HestiaMonitorApp> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // ΕΔΩ ΒΑΖΟΥΜΕ ΤΟ ΛΟΓΟΤΥΠΟ ΣΟΥ ΑΝΤΙ ΓΙΑ ΤΟ ΛΟΥΚΕΤΟ!
+                    // HERE WE PUT YOUR LOGO INSTEAD OF THE LOCK!
                     ClipRRect(
                       borderRadius: BorderRadius.circular(
                         20,
-                      ), // Κάνει τις γωνίες της εικόνας λίγο στρογγυλές
+                      ), // Makes the image corners slightly rounded
                       child: Image.asset(
                         'assets/icon.png',
-                        width: 130, // Μέγεθος εικόνας
+                        width: 130, // Image size
                         height: 130,
                         fit: BoxFit.cover,
                       ),
@@ -96,14 +95,15 @@ class _HestiaMonitorAppState extends State<HestiaMonitorApp> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2, // Δίνει λίγο αέρα στα γράμματα
+                        letterSpacing:
+                            1.2, // Gives some breathing room to the letters
                       ),
                     ),
                     const SizedBox(height: 40),
                     ElevatedButton.icon(
                       onPressed: _authenticate,
                       icon: const Icon(Icons.security),
-                      label: const Text('Ξεκλείδωμα Εφαρμογής'),
+                      label: const Text('Unlock App'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 30,
@@ -111,8 +111,8 @@ class _HestiaMonitorAppState extends State<HestiaMonitorApp> {
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
-                            10,
-                          ), // Πιο τετράγωνο κουμπί
+                            10, // More squared button
+                          ),
                         ),
                       ),
                     ),

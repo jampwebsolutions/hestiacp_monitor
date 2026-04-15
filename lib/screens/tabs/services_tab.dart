@@ -16,7 +16,7 @@ class ServicesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
     if (services.isEmpty) {
-      return const Center(child: Text("Δεν βρέθηκαν υπηρεσίες."));
+      return const Center(child: Text("No services found."));
     }
 
     List<String> names = services.keys.toList();

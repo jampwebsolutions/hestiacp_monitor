@@ -10,12 +10,10 @@ class WebTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
     if (domains.isEmpty) {
-      return const Center(
-        child: Text("Δεν βρέθηκαν Web Domains για αυτόν τον χρήστη."),
-      );
+      return const Center(child: Text("No Web Domains found for this user."));
     }
 
-    // Το HestiaCP μας επιστρέφει τα domains ως "κλειδιά" του λεξικού
+    // HestiaCP returns the domains as dictionary "keys"
     List<String> domainNames = domains.keys.toList();
 
     return ListView.builder(
@@ -24,7 +22,7 @@ class WebTab extends StatelessWidget {
         String domainName = domainNames[index];
         var domainData = domains[domainName];
 
-        // Ελέγχουμε αν το SSL είναι ενεργό
+        // Check if SSL is active
         bool hasSSL = domainData['SSL'] == 'yes';
 
         return Card(
@@ -65,8 +63,7 @@ class WebTab extends StatelessWidget {
                 ),
               ],
             ),
-            isThreeLine:
-                true, // Κάνει την κάρτα λίγο πιο ψηλή για να χωράνε τα δεδομένα
+            isThreeLine: true, // Makes the card slightly taller to fit the data
           ),
         );
       },

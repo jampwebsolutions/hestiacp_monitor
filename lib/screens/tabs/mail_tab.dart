@@ -14,7 +14,7 @@ class MailTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
     if (mailDomains.isEmpty) {
-      return const Center(child: Text("Δεν βρέθηκαν Mail Domains."));
+      return const Center(child: Text("No Mail Domains found."));
     }
 
     List<String> domains = mailDomains.keys.toList();
