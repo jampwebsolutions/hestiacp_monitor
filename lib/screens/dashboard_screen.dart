@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:convert/convert.dart';
 
 import '../models/server_model.dart';
 import 'tabs/stats_tab.dart';
@@ -46,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     int timeWindow =
         (DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000) ~/ 30;
     var bytes = utf8.encode("$secretKey$timeWindow");
-    return sha256.convert(bytes).toString();
+    return hex.encode(sha256.convert(bytes).bytes);
   }
 
   /// A generic helper method to send secure POST requests to the HestiaCP API bridge.
@@ -74,38 +75,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Refreshes all dashboard data sequentially while showing a loading indicator.
   Future<void> _refreshAllData() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
 
-    await fetchServerStats();
-    await fetchServices();
-    await fetchWebDomains();
-    await fetchMailDomains();
+    await Future.wait([
+      fetchServerStats(),
+      fetchServices(),
+      fetchWebDomains(),
+      fetchMailDomains(),
+    ]);
 
-    setState(() => isLoading = false);
+    if (mounted) setState(() => isLoading = false);
   }
 
   /// Fetches general server statistics (like uptime and load average).
   Future<void> fetchServerStats() async {
     try {
-      final token = _getAuthToken();
-
       final response = await _makeSecureRequest(
         'v-list-sys-info',
         arg1: 'json',
       );
 
-      if (response == null) {
-        return;
-      }
-
-      if (response.statusCode == 200) {
+      if (response != null && response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
-          uptime = _formatUptime(data['sysinfo']['UPTIME'].toString());
-          loadAverage = _formatLoadAverage(
-            data['sysinfo']['LOADAVERAGE'].toString(),
-          );
-        });
+        if (mounted) {
+          setState(() {
+            uptime = _formatUptime(data['sysinfo']['UPTIME'].toString());
+            loadAverage = _formatLoadAverage(
+              data['sysinfo']['LOADAVERAGE'].toString(),
+            );
+          });
+        }
       }
     } catch (e) {}
   }
@@ -118,12 +118,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (response?.statusCode == 200) {
-      final Map<String, dynamic> decoded = json.decode(response.body);
+      final Map<String, dynamic> decoded = json.decode(response!.body);
       final sortedKeys = decoded.keys.toList()
         ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      setState(() {
-        servicesList = {for (var k in sortedKeys) k: decoded[k]};
-      });
+      if (mounted) {
+        setState(() {
+          servicesList = {for (var k in sortedKeys) k: decoded[k]};
+        });
+      }
     }
   }
 
@@ -136,12 +138,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (response?.statusCode == 200) {
-      final Map<String, dynamic> decoded = json.decode(response.body);
+      final Map<String, dynamic> decoded = json.decode(response!.body);
       final sortedKeys = decoded.keys.toList()
         ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      setState(() {
-        webDomainsList = {for (var k in sortedKeys) k: decoded[k]};
-      });
+      if (mounted) {
+        setState(() {
+          webDomainsList = {for (var k in sortedKeys) k: decoded[k]};
+        });
+      }
     }
   }
 
@@ -156,9 +160,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final Map<String, dynamic> decoded = json.decode(response!.body);
       final sortedKeys = decoded.keys.toList()
         ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      setState(() {
-        mailDomainsList = {for (var k in sortedKeys) k: decoded[k]};
-      });
+      if (mounted) {
+        setState(() {
+          mailDomainsList = {for (var k in sortedKeys) k: decoded[k]};
+        });
+      }
     }
   }
 
@@ -174,20 +180,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (response?.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Success!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Success!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
       _refreshAllData();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to restart.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to restart.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
