@@ -14,7 +14,8 @@ class WebTab extends StatelessWidget {
     }
 
     // HestiaCP returns the domains as dictionary "keys"
-    List<String> domainNames = domains.keys.toList();
+    List<String> domainNames = domains.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return ListView.builder(
       itemCount: domainNames.length,

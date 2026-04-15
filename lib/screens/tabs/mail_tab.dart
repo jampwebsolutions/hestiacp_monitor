@@ -17,7 +17,8 @@ class MailTab extends StatelessWidget {
       return const Center(child: Text("No Mail Domains found."));
     }
 
-    List<String> domains = mailDomains.keys.toList();
+    List<String> domains = mailDomains.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return ListView.builder(
       itemCount: domains.length,

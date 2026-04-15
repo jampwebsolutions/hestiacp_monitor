@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // Για utf8 και json
-import 'package:crypto/crypto.dart'; // Για sha256
-import 'package:convert/convert.dart'; // ΑΥΤΟ ΛΕΙΠΕΙ για το hex.encode
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import '../models/server_model.dart';
 import 'tabs/stats_tab.dart';
@@ -10,6 +9,8 @@ import 'tabs/services_tab.dart';
 import 'tabs/web_tab.dart';
 import 'tabs/mail_tab.dart';
 
+/// The main dashboard for a specific HestiaCP server.
+/// Manages navigation between different functional tabs (Stats, Services, Web, Mail) and handles data fetching.
 class DashboardScreen extends StatefulWidget {
   final ServerModel server;
   const DashboardScreen({super.key, required this.server});
@@ -19,15 +20,18 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Tracks the currently selected tab in the BottomNavigationBar.
   int _currentIndex = 0;
 
+  // Indicates whether network requests are currently running.
+  bool isLoading = false;
+
+  // State variables to hold fetched server data.
   String uptime = "Unknown";
   String loadAverage = "Unknown";
   Map<String, dynamic> servicesList = {};
   Map<String, dynamic> webDomainsList = {};
   Map<String, dynamic> mailDomainsList = {};
-
-  bool isLoading = false;
 
   @override
   void initState() {
@@ -35,75 +39,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _refreshAllData();
   }
 
+  /// Generates a time-based SHA256 authentication token.
+  /// Combines the bridge secret and a 30-second time window integer to securely authorize API calls.
   String _getAuthToken() {
     String secretKey = widget.server.bridgeSecret;
-    // Χρήση UTC για να μην έχουμε θέματα με το timezone του κινητού
-    int timeWindow = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000 / 30)
-        .floor();
+    int timeWindow =
+        (DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000) ~/ 30;
     var bytes = utf8.encode("$secretKey$timeWindow");
     return sha256.convert(bytes).toString();
   }
 
-  // Μετατρέπει τα συνολικά λεπτά σε Μέρες, Ώρες, Λεπτά
-  String _formatUptime(String minutesStr) {
-    int totalMinutes = int.tryParse(minutesStr) ?? 0;
-    if (totalMinutes == 0) return "$minutesStr λεπτά";
-
-    int days = totalMinutes ~/ (24 * 60);
-    int hours = (totalMinutes % (24 * 60)) ~/ 60;
-    int minutes = totalMinutes % 60;
-
-    List<String> parts = [];
-    if (days > 0) parts.add('$days μέρες');
-    if (hours > 0) parts.add('$hours ώρες');
-    parts.add('$minutes λεπτά');
-
-    return parts.join(', ');
-  }
-
-  // Μορφοποίηση του Load Average (Αλάνθαστη μέθοδος)
-  String _formatLoadAverage(String loadStr) {
-    // Ψάχνει στο κείμενο και κρατάει ΜΟΝΟ αριθμούς (π.χ. 0.15, 1.00, 2)
-    Iterable<Match> matches = RegExp(r'\d+(\.\d+)?').allMatches(loadStr);
-    List<String> parts = matches.map((m) => m.group(0)!).toList();
-
-    // Αν βρήκε τουλάχιστον 3 αριθμούς, τους βάζει στη σωστή θέση
-    if (parts.length >= 3) {
-      return "1λ: ${parts[0]}  |  5λ: ${parts[1]}  |  15λ: ${parts[2]}";
+  /// A generic helper method to send secure POST requests to the HestiaCP API bridge.
+  /// Packages the generated token, the [cmd], and optional arguments into a JSON payload.
+  Future<http.Response?> _makeSecureRequest(
+    String cmd, {
+    String? arg1,
+    String? arg2,
+  }) async {
+    try {
+      return await http.post(
+        Uri.parse(widget.server.url),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: json.encode({
+          'app_token': _getAuthToken(),
+          'cmd': cmd,
+          'arg1': arg1 ?? '',
+          'arg2': arg2 ?? '',
+        }),
+      );
+    } catch (e) {
+      return null;
     }
-
-    // Αν κάτι πάει στραβά, το δείχνει όπως ήρθε
-    return loadStr;
   }
 
+  /// Refreshes all dashboard data sequentially while showing a loading indicator.
   Future<void> _refreshAllData() async {
     setState(() => isLoading = true);
 
-    // Πλέον περιμένουμε 3 πράγματα να κατέβουν!
     await fetchServerStats();
     await fetchServices();
-    await fetchWebDomains(); // <-- ΝΕΟ
-    await fetchMailDomains(); // <-- ΝΕΟ
+    await fetchWebDomains();
+    await fetchMailDomains();
 
     setState(() => isLoading = false);
   }
 
-  // ... (Λήψη Στατιστικών)
+  /// Fetches general server statistics (like uptime and load average).
   Future<void> fetchServerStats() async {
     try {
-      final response = await http.post(
-        Uri.parse(widget.server.url),
-        headers: {
-          'Content-Type':
-              'application/json; charset=UTF-8', // Πρέπει να είναι JSON
-        },
-        body: json.encode({
-          // Χρησιμοποιούμε json.encode
-          'app_token': _getAuthToken(),
-          'cmd': 'v-list-sys-info',
-          'arg1': 'json',
-        }),
+      final token = _getAuthToken();
+
+      final response = await _makeSecureRequest(
+        'v-list-sys-info',
+        arg1: 'json',
       );
+
+      if (response == null) {
+        return;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -113,174 +106,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['sysinfo']['LOADAVERAGE'].toString(),
           );
         });
-
-        // Τώρα το print θα δουλέψει σωστά
-        print(
-          "MOBILE HEX: ${hex.encode(utf8.encode(widget.server.bridgeSecret))}",
-        );
-      } else {
-        print("Server Error: ${response.statusCode} - ${response.body}");
       }
-    } catch (e) {
-      print("Stats fault: $e");
-    }
+    } catch (e) {}
   }
 
-  // ... (Λήψη Υπηρεσιών)
+  /// Fetches the list of system services running on the server.
   Future<void> fetchServices() async {
-    try {
-      final response = await http.post(
-        Uri.parse(widget.server.url),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
-        },
-        body: {
-          'app_token': _getAuthToken(),
-          'user': widget.server.username,
-          'password': widget.server.password,
-          'cmd': 'v-list-sys-services',
-          'arg1': 'json',
-        },
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          servicesList = json.decode(response.body);
-        });
-      }
-    } catch (e) {
-      print("Σφάλμα Υπηρεσιών: $e");
-    }
-  }
-
-  // --- ΝΕΑ ΣΥΝΑΡΤΗΣΗ: Λήψη Web Domains ---
-  Future<void> fetchWebDomains() async {
-    try {
-      final response = await http.post(
-        Uri.parse(widget.server.url),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
-        },
-        body: {
-          'app_token': _getAuthToken(),
-          'user': widget.server.username,
-          'password': widget.server.password,
-          'cmd': 'v-list-web-domains', // Η εντολή για τα domains
-          'arg1': widget
-              .server
-              .username, // ΠΡΟΣΟΧΗ: Θέλουμε τα domains ΑΥΤΟΥ του χρήστη
-          'arg2': 'json', // Το format που θέλουμε
-        },
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          webDomainsList = json.decode(response.body);
-        });
-      }
-    } catch (e) {
-      print("Σφάλμα Web Domains: $e");
-    }
-  }
-
-  Future<void> fetchMailDomains() async {
-    try {
-      final response = await http.post(
-        Uri.parse(widget.server.url),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
-        },
-        body: {
-          'app_token': _getAuthToken(),
-          'user': widget.server.username,
-          'password': widget.server.password,
-          'cmd': 'v-list-mail-domains',
-          'arg1': widget.server.username,
-          'arg2': 'json',
-        },
-      );
-      if (response.statusCode == 200) {
-        setState(() => mailDomainsList = json.decode(response.body));
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  // ... (Επανεκκίνηση Υπηρεσίας - Παραμένει το ίδιο)
-  Future<void> restartService(String serviceName) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Γίνεται επανεκκίνηση: $serviceName...'),
-        duration: const Duration(seconds: 2),
-      ),
+    final response = await _makeSecureRequest(
+      'v-list-sys-services',
+      arg1: 'json',
     );
-    try {
-      final response = await http.post(
-        Uri.parse(widget.server.url),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8', // ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ
-        },
-        body: {
-          'app_token': _getAuthToken(),
-          'user': widget.server.username,
-          'password': widget.server.password,
-          'cmd': 'v-restart-service',
-          'arg1': serviceName,
-        },
-      );
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Επιτυχία!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _refreshAllData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Αποτυχία επανεκκίνησης.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
+
+    if (response?.statusCode == 200) {
+      final Map<String, dynamic> decoded = json.decode(response.body);
+      final sortedKeys = decoded.keys.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      setState(() {
+        servicesList = {for (var k in sortedKeys) k: decoded[k]};
+      });
+    }
+  }
+
+  /// Fetches the list of hosted web domains for the authenticated user.
+  Future<void> fetchWebDomains() async {
+    final response = await _makeSecureRequest(
+      'v-list-web-domains',
+      arg1: widget.server.username,
+      arg2: 'json',
+    );
+
+    if (response?.statusCode == 200) {
+      final Map<String, dynamic> decoded = json.decode(response.body);
+      final sortedKeys = decoded.keys.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      setState(() {
+        webDomainsList = {for (var k in sortedKeys) k: decoded[k]};
+      });
+    }
+  }
+
+  /// Fetches the list of hosted mail domains.
+  Future<void> fetchMailDomains() async {
+    final response = await _makeSecureRequest(
+      'v-list-mail-domains',
+      arg1: widget.server.username,
+      arg2: 'json',
+    );
+    if (response?.statusCode == 200) {
+      final Map<String, dynamic> decoded = json.decode(response!.body);
+      final sortedKeys = decoded.keys.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      setState(() {
+        mailDomainsList = {for (var k in sortedKeys) k: decoded[k]};
+      });
+    }
+  }
+
+  /// Restarts a specific system service by its [serviceName].
+  /// Shows a SnackBar providing immediate feedback to the user on success or failure.
+  Future<void> restartService(String serviceName) async {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Restarting $serviceName...')));
+    final response = await _makeSecureRequest(
+      'v-restart-service',
+      arg1: serviceName,
+    );
+
+    if (response?.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Σφάλμα δικτύου.'),
+          content: Text('Success!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _refreshAllData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to restart.'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
+  /// Formats raw uptime minutes into a more readable 'days, hours, minutes' format.
+  String _formatUptime(String minutesStr) {
+    int totalMinutes = int.tryParse(minutesStr) ?? 0;
+    if (totalMinutes == 0) return "0m";
+    int days = totalMinutes ~/ 1440;
+    int hours = (totalMinutes % 1440) ~/ 60;
+    int minutes = totalMinutes % 60;
+    return "${days}d, ${hours}h, ${minutes}m";
+  }
+
+  /// Formats a raw load average string into distinct 1m, 5m, and 15m intervals.
+  String _formatLoadAverage(String loadStr) {
+    Iterable<Match> matches = RegExp(r'\d+(\.\d+)?').allMatches(loadStr);
+    List<String> parts = matches.map((m) => m.group(0)!).toList();
+    return parts.length >= 3
+        ? "1m: ${parts[0]} | 5m: ${parts[1]} | 15m: ${parts[2]}"
+        : loadStr;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Επιλογή Καρτέλας: Τώρα έχουμε 3 επιλογές!
-    Widget currentTab;
-    if (_currentIndex == 0) {
-      currentTab = StatsTab(
+    // Definition of the screens corresponding to the BottomNavigationBar items.
+    final List<Widget> tabs = [
+      StatsTab(
         server: widget.server,
         uptime: uptime,
         loadAverage: loadAverage,
         isLoading: isLoading,
-      );
-    } else if (_currentIndex == 1) {
-      currentTab = ServicesTab(
+      ),
+      ServicesTab(
         services: servicesList,
         isLoading: isLoading,
         onRestart: restartService,
-      );
-    } else if (_currentIndex == 2) {
-      currentTab = WebTab(domains: webDomainsList, isLoading: isLoading);
-    } else {
-      currentTab = MailTab(mailDomains: mailDomainsList, isLoading: isLoading);
-    }
+      ),
+      WebTab(domains: webDomainsList, isLoading: isLoading),
+      MailTab(mailDomains: mailDomainsList, isLoading: isLoading),
+    ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.server.name),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -288,27 +239,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: currentTab,
+      body: tabs[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        // Προσθέσαμε το 3ο κουμπί!
-        items: const [
-          BottomNavigationBarItem(
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.analytics),
-            label: 'Στατιστικά',
+            label: 'Stats',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_input_component),
-            label: 'Υπηρεσίες',
+            icon: const Icon(Icons.settings_input_component),
+            label: 'Services (${servicesList.length})',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.language), label: 'Web'),
-          BottomNavigationBarItem(icon: Icon(Icons.mail), label: 'Mail'),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.language),
+            label: 'Web (${webDomainsList.length})',
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.mail),
+            label: 'Mail (${mailDomainsList.length})',
+          ),
         ],
       ),
     );

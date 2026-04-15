@@ -3,6 +3,8 @@ import '../models/server_model.dart';
 import '../utils/storage_helper.dart';
 import 'dashboard_screen.dart';
 
+/// The main screen displaying a list of saved HestiaCP servers.
+/// Allows users to view, add, edit, and delete server configurations.
 class ServerListScreen extends StatefulWidget {
   const ServerListScreen({super.key});
 
@@ -20,6 +22,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
     _loadSavedServers();
   }
 
+  /// Loads the saved server configurations from local storage.
   Future<void> _loadSavedServers() async {
     final savedServers = await StorageHelper.loadServers();
     setState(() {
@@ -28,7 +31,8 @@ class _ServerListScreenState extends State<ServerListScreen> {
     });
   }
 
-  // A common function for Add AND Edit
+  /// Displays an AlertDialog to add a new server or edit an existing one.
+  /// If [serverToEdit] is provided, the dialog fields are pre-populated.
   void _showServerDialog({ServerModel? serverToEdit, int? index}) {
     final nameController = TextEditingController(
       text: serverToEdit?.name ?? '',
@@ -43,7 +47,6 @@ class _ServerListScreenState extends State<ServerListScreen> {
     final passwordController = TextEditingController(
       text: serverToEdit?.password ?? '',
     );
-    // NEW CONTROLLER
     final secretController = TextEditingController(
       text: serverToEdit?.bridgeSecret ?? '',
     );
@@ -114,7 +117,6 @@ class _ServerListScreenState extends State<ServerListScreen> {
                   ),
                   obscureText: true,
                 ),
-                // NEW FIELD ON THE SCREEN
                 TextField(
                   controller: secretController,
                   decoration: const InputDecoration(
@@ -132,6 +134,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
+                // Construct a new ServerModel from the user's input.
                 final newServer = ServerModel(
                   id:
                       serverToEdit?.id ??
@@ -140,16 +143,17 @@ class _ServerListScreenState extends State<ServerListScreen> {
                   url: urlController.text.trim(),
                   username: usernameController.text.trim(),
                   password: passwordController.text.trim(),
-                  bridgeSecret: secretController.text
-                      .trim(), // Save the new secret!
+                  bridgeSecret: secretController.text.trim(),
                 );
 
+                // Add or update the server in the list.
                 if (serverToEdit == null) {
                   servers.add(newServer);
                 } else {
                   servers[index!] = newServer;
                 }
 
+                // Persist the updated list to storage and refresh the UI.
                 await StorageHelper.saveServers(servers);
                 setState(() {});
                 if (mounted) Navigator.pop(context);
@@ -166,6 +170,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('My Servers'), centerTitle: true),
+      // Display a loader until the servers are fetched from storage.
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -200,6 +205,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                             color: Colors.redAccent,
                           ),
                           onPressed: () async {
+                            // Remove the server from the list and persist the changes.
                             servers.removeAt(index);
                             await StorageHelper.saveServers(servers);
                             setState(() {});
@@ -207,6 +213,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                         ),
                       ],
                     ),
+                    // Navigate to the dashboard for the selected server.
                     onTap: () {
                       Navigator.push(
                         context,

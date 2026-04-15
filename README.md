@@ -12,6 +12,7 @@ A modern, fast, and secure native Android application to monitor and manage your
 * **Service Management:** View the status of core services (Nginx, Apache, PHP, MySQL) and restart them directly from your phone.
 * **Domains & Mail:** Quickly check your configured web domains and mail domains.
 * **Biometric Security:** The app can be locked using your device's Fingerprint/FaceID or PIN for maximum security.
+* **SSL Support:** Compatible with self-signed certificates and custom HestiaCP ports.
 
 ## 🚀 How to Connect Your Server
 
@@ -30,7 +31,7 @@ If you want to compile the APK yourself using Flutter:
 
 ```bash
 # Clone the repository
-git clone [https://github.com/jampwebsolutions/hestiacp_monitor.git](https://github.com/jampwebsolutions/hestiacp_monitor.git)
+git clone https://github.com/jampwebsolutions/hestiacp_monitor.git
 
 # Navigate to the folder
 cd hestiacp_monitor
@@ -41,5 +42,8 @@ flutter pub get
 # Build the Android APK
 flutter build apk --release
 ```
+
+## 🛡️ Security Disclaimer
+This app is provided "as is". While it uses cryptographic signing (SHA-256) and secure on-device storage for all credentials, always ensure your server's firewall is correctly configured.
 
 Designed & Developed by JAMP Web Solutions
