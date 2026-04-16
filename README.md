@@ -2,6 +2,7 @@
 
 ![Flutter](https://img.shields.io/badge/Made_with-Flutter-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Android-green.svg)
+![Downloads](https://img.shields.io/github/downloads/jampwebsolutions/hestiacp_monitor/total)
 
 A modern, fast, and secure native Android application to monitor and manage your Hestia Control Panel servers on the go.
 
@@ -57,5 +58,3 @@ flutter build apk --release
 This app is provided "as is". While it uses cryptographic signing (SHA-256) and secure on-device storage for all credentials, always ensure your server's firewall is correctly configured.
 
 Designed & Developed by JAMP Web Solutions
-
-![Downloads](https://img.shields.io/github/downloads/jampwebsolutions/hestiacp_monitor/total)
