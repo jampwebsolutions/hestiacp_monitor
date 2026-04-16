@@ -45,12 +45,12 @@ flutter build apk --release
 
 ## 📸 Screenshots
 <p align="center">
-  <img src="sapp-screenshots/home.jpg" width="250" title="Dashboard">
-  <img src="app-screenshots/server-list.jpg" width="250" title="Services">
-  <img src="app-screenshots/stats.jpg" width="250" title="Web Domains">
-  <img src="app-screenshots/services.jpg" width="250" title="Web Domains">
+  <img src="app-screenshots/home.jpg" width="250" title="Dashboard">
+  <img src="app-screenshots/server-list.jpg" width="250" title="Server List">
+  <img src="app-screenshots/stats.jpg" width="250" title="Stats">
+  <img src="app-screenshots/services.jpg" width="250" title="Services">
   <img src="app-screenshots/domains.jpg" width="250" title="Web Domains">
-  <img src="app-screenshots/mail.jpg" width="250" title="Web Domains">
+  <img src="app-screenshots/mail.jpg" width="250" title="Web Mails">
 </p>
 
 ## 🛡️ Security Disclaimer
