@@ -57,3 +57,5 @@ flutter build apk --release
 This app is provided "as is". While it uses cryptographic signing (SHA-256) and secure on-device storage for all credentials, always ensure your server's firewall is correctly configured.
 
 Designed & Developed by JAMP Web Solutions
+
+![Downloads](https://img.shields.io/github/downloads/jampwebsolutions/hestiacp_monitor/total)
