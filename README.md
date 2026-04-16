@@ -43,6 +43,16 @@ flutter pub get
 flutter build apk --release
 ```
 
+## 📸 Screenshots
+<p align="center">
+  <img src="sapp-screenshots/home.jpg" width="250" title="Dashboard">
+  <img src="app-screenshots/server-list.jpg" width="250" title="Services">
+  <img src="app-screenshots/stats.jpg" width="250" title="Web Domains">
+  <img src="app-screenshots/services.jpg" width="250" title="Web Domains">
+  <img src="app-screenshots/domains.jpg" width="250" title="Web Domains">
+  <img src="app-screenshots/mail.jpg" width="250" title="Web Domains">
+</p>
+
 ## 🛡️ Security Disclaimer
 This app is provided "as is". While it uses cryptographic signing (SHA-256) and secure on-device storage for all credentials, always ensure your server's firewall is correctly configured.
 
