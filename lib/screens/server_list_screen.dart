@@ -64,9 +64,11 @@ class _ServerListScreenState extends State<ServerListScreen> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.blueGrey.withOpacity(0.1),
+                    color: Colors.blueGrey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.blueGrey.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.blueGrey.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
